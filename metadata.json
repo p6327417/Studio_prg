@@ -1,0 +1,5 @@
+{
+  "name": "KP Astrology Data Manager",
+  "description": "A React-based data management tool for KP Astrology questions and answers, featuring CSV import/export and local storage persistence.",
+  "requestFramePermissions": []
+}

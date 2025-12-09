@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KP Astrology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              kp: {
+                red: {
+                  light: '#ff6b6b',
+                  medium: '#c92a2a',
+                  dark: '#8b0000',
+                  nav: '#a61c1c',
+                  nav2: '#d63031',
+                },
+                teal: {
+                  DEFAULT: '#1abc9c',
+                  dark: '#16a085',
+                },
+                blue: {
+                  DEFAULT: '#3498db',
+                  dark: '#2980b9',
+                }
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1"
+  }
+}
+</script>
+</head>
+  <body class="bg-gradient-to-br from-kp-red-light via-kp-red-medium to-kp-red-dark min-h-screen p-2 md:p-3 font-sans antialiased">
+    <div id="root"></div>
+  </body>
+</html>
