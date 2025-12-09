@@ -5,10 +5,11 @@ import { parseCsvContent } from '../services/csv';
 interface EditDataProps {
   records: QARecord[];
   onUpdateRecord: (record: QARecord) => void;
+  onDeleteRecord: (id: string) => void;
   onBulkUpdate: (records: QARecord[]) => void;
 }
 
-const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onBulkUpdate }) => {
+const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onDeleteRecord, onBulkUpdate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTriggered, setSearchTriggered] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,12 +37,34 @@ const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onBulkUpda
     setEditingId(null);
   };
 
-  const startEditing = (record: QARecord) => {
+  const startEditing = (e: React.MouseEvent, record: QARecord) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Removed window.confirm for Edit action to improve UX/reliability
     setEditingId(record.id);
     setEditForm({ question: record.question, answer: record.answer });
+    
+    // Allow React to render the form before scrolling
     setTimeout(() => {
-        editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (editFormRef.current) {
+            editFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }, 100);
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (window.confirm("Are you sure you want to delete this record? This action cannot be undone.")) {
+        onDeleteRecord(id);
+        if (editingId === id) {
+            cancelEditing();
+        }
+        setMessage({ text: 'Record deleted successfully.', type: 'success' });
+        setTimeout(() => setMessage(null), 3000);
+    }
   };
 
   const cancelEditing = () => {
@@ -112,13 +135,13 @@ const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onBulkUpda
           placeholder="Search by keyword in question..."
           className="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-kp-teal focus:border-transparent"
         />
-        <button onClick={handleSearch} className="bg-kp-blue hover:bg-kp-blue-dark text-white px-4 py-2 rounded transition-colors">
+        <button type="button" onClick={handleSearch} className="bg-kp-blue hover:bg-kp-blue-dark text-white px-4 py-2 rounded transition-colors">
           Search
         </button>
-        <button onClick={handleShowAll} className="bg-kp-blue hover:bg-kp-blue-dark text-white px-4 py-2 rounded transition-colors">
+        <button type="button" onClick={handleShowAll} className="bg-kp-blue hover:bg-kp-blue-dark text-white px-4 py-2 rounded transition-colors">
           Show All
         </button>
-        <button onClick={() => fileInputRef.current?.click()} className="bg-kp-teal hover:bg-kp-teal-dark text-white px-4 py-2 rounded transition-colors">
+        <button type="button" onClick={() => fileInputRef.current?.click()} className="bg-kp-teal hover:bg-kp-teal-dark text-white px-4 py-2 rounded transition-colors">
           Bulk Upload CSV
         </button>
         <input 
@@ -137,26 +160,41 @@ const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onBulkUpda
         )}
 
         {searchTriggered && filteredRecords.map(record => (
-          <div key={record.id} className="bg-gray-50 p-4 rounded border border-gray-200 shadow-sm break-words">
-            <h3 className="font-semibold text-gray-800 mb-2">{record.question}</h3>
-            <p className="text-gray-600 text-sm mb-3 line-clamp-3">{record.answer}</p>
-            <button 
-                onClick={() => startEditing(record)}
-                className="text-xs bg-kp-teal hover:bg-kp-teal-dark text-white px-3 py-1 rounded transition-colors"
-            >
-                Edit
-            </button>
+          <div key={record.id} className="bg-gray-50 p-4 rounded border border-gray-200 shadow-sm break-words flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex-1">
+                <h3 className="font-semibold text-gray-800 mb-2">{record.question}</h3>
+                <p className="text-gray-600 text-sm mb-0 line-clamp-3">{record.answer}</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+                <button 
+                    type="button"
+                    onClick={(e) => startEditing(e, record)}
+                    className="text-xs bg-kp-teal hover:bg-kp-teal-dark text-white px-3 py-1.5 rounded transition-colors whitespace-nowrap cursor-pointer"
+                >
+                    Edit
+                </button>
+                <button 
+                    type="button"
+                    onClick={(e) => handleDelete(e, record.id)}
+                    className="text-xs bg-kp-red-nav2 hover:bg-kp-red-dark text-white px-3 py-1.5 rounded transition-colors whitespace-nowrap cursor-pointer"
+                >
+                    Delete
+                </button>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Edit Form Modal/Section */}
       {editingId && (
-        <div ref={editFormRef} className="bg-gray-100 p-6 rounded-lg border border-gray-200 mt-8 animate-fade-in">
+        <div ref={editFormRef} className="bg-gray-100 p-6 rounded-lg border border-gray-200 mt-8">
           <h3 className="text-xl font-bold mb-4 text-gray-800">Edit Record</h3>
           
           <div className="mb-4">
-            <label className="block mb-2 font-semibold text-gray-700">Question:</label>
+            <label className="block mb-2 font-semibold text-gray-700">
+                Question 
+                <span className="text-gray-500 font-normal text-sm ml-2">({editForm.question.length} chars)</span>:
+            </label>
             <textarea
               value={editForm.question}
               onChange={(e) => setEditForm(prev => ({ ...prev, question: e.target.value }))}
@@ -165,7 +203,10 @@ const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onBulkUpda
           </div>
           
           <div className="mb-4">
-            <label className="block mb-2 font-semibold text-gray-700">Answer:</label>
+            <label className="block mb-2 font-semibold text-gray-700">
+                Answer
+                <span className="text-gray-500 font-normal text-sm ml-2">({editForm.answer.length} chars)</span>:
+            </label>
             <textarea
               value={editForm.answer}
               onChange={(e) => setEditForm(prev => ({ ...prev, answer: e.target.value }))}
@@ -174,10 +215,10 @@ const EditData: React.FC<EditDataProps> = ({ records, onUpdateRecord, onBulkUpda
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            <button onClick={saveEdit} className="bg-kp-teal hover:bg-kp-teal-dark text-white px-6 py-2 rounded transition-colors">
+            <button type="button" onClick={saveEdit} className="bg-kp-teal hover:bg-kp-teal-dark text-white px-6 py-2 rounded transition-colors">
                 Save Changes
             </button>
-            <button onClick={cancelEditing} className="bg-kp-blue hover:bg-kp-blue-dark text-white px-6 py-2 rounded transition-colors">
+            <button type="button" onClick={cancelEditing} className="bg-kp-blue hover:bg-kp-blue-dark text-white px-6 py-2 rounded transition-colors">
                 Cancel
             </button>
           </div>

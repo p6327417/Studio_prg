@@ -31,6 +31,13 @@ const App: React.FC = () => {
     saveStoredRecords(updatedRecords);
   };
 
+  // Handler to delete a record
+  const handleDeleteRecord = (id: string) => {
+    const updatedRecords = records.filter(r => r.id !== id);
+    setRecords(updatedRecords);
+    saveStoredRecords(updatedRecords);
+  };
+
   // Handler to bulk update (from CSV)
   const handleBulkUpdate = (newRecords: QARecord[]) => {
     setRecords(newRecords);
@@ -73,13 +80,14 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="p-4 md:p-8 min-h-[400px]">
         {view === ViewState.ENTER && (
-          <EnterData onAddRecord={handleAddRecord} />
+          <EnterData onAddRecord={handleAddRecord} records={records} />
         )}
         
         {view === ViewState.EDIT && (
           <EditData 
             records={records} 
             onUpdateRecord={handleUpdateRecord}
+            onDeleteRecord={handleDeleteRecord}
             onBulkUpdate={handleBulkUpdate}
           />
         )}
